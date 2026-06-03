@@ -1,0 +1,1447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Castle Stairs: The Staircase of Destiny</title>
+    <!-- Tailwind CSS for sleek overlay styles -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Medieval & Fantasy vibes -->
+    <link href="https://fonts.googleapis.com/css2?family=Almendra:ital,wght@0,400;0,700;1,400&family=Cinzel:wght@400;700;900&family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Three.js for immersive 3D scene -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- Tone.js for premium procedural game sounds -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            user-select: none;
+            overflow: hidden;
+        }
+        .fantasy-title {
+            font-family: 'Cinzel', serif;
+        }
+        .medieval-font {
+            font-family: 'Almendra', serif;
+        }
+        /* Custom parchment style matching image UI */
+        .wood-panel {
+            background: linear-gradient(135deg, #3d2a1d 0%, #22140a 100%);
+            border: 4px solid #5c3e26;
+            box-shadow: inset 0 0 15px rgba(0,0,0,0.8), 0 10px 25px rgba(0,0,0,0.7);
+            border-image: linear-gradient(to bottom, #8c5d3a, #3d2a1d) 1;
+        }
+        .parchment-panel {
+            background: radial-gradient(circle, #f4e4c4 0%, #d9b48f 100%);
+            border: 3px solid #8c6a46;
+            color: #3b220c;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+        }
+        /* Ribbon style from image 2 */
+        .red-ribbon {
+            background: linear-gradient(135deg, #b81d1d 0%, #7a0c0c 100%);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.8);
+        }
+        /* Scrollbars styling */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(0,0,0,0.2);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #5c3e26;
+            border-radius: 3px;
+        }
+        /* Dice spinning animation keyframes */
+        @keyframes diceSpin {
+            0% { transform: rotateX(0deg) rotateY(0deg) rotateZ(0deg); }
+            100% { transform: rotateX(720deg) rotateY(1080deg) rotateZ(360deg); }
+        }
+        .dice-spinning {
+            animation: diceSpin 0.8s cubic-bezier(0.2, 0.8, 0.3, 1) infinite;
+        }
+        /* Screen pulse on damage/win */
+        .red-flash {
+            animation: flashRed 0.5s ease-out;
+        }
+        @keyframes flashRed {
+            0% { box-shadow: inset 0 0 0px rgba(255,0,0,0); }
+            50% { box-shadow: inset 0 0 100px rgba(255,0,0,0.8); }
+            100% { box-shadow: inset 0 0 0px rgba(255,0,0,0); }
+        }
+        .green-flash {
+            animation: flashGreen 0.5s ease-out;
+        }
+        @keyframes flashGreen {
+            0% { box-shadow: inset 0 0 0px rgba(0,255,100,0); }
+            50% { box-shadow: inset 0 0 100px rgba(0,255,100,0.8); }
+            100% { box-shadow: inset 0 0 0px rgba(0,255,100,0); }
+        }
+    </style>
+</head>
+<body class="bg-[#dad5c6] text-stone-100 flex h-screen w-screen relative">
+
+    <!-- Setup / Main Menu Overlay -->
+    <div id="setup-screen" class="absolute inset-0 z-50 flex items-center justify-center bg-stone-950 bg-opacity-90 transition-all duration-500 p-4 overflow-y-auto">
+        <div class="max-w-xl w-full wood-panel p-8 rounded-lg text-center relative">
+            <div class="absolute -top-6 left-1/2 transform -translate-x-1/2 red-ribbon px-8 py-2 rounded transform -skew-x-6">
+                <h1 class="fantasy-title text-2xl font-black text-amber-300 tracking-wider">STAIRCASE OF DESTINY</h1>
+            </div>
+            
+            <p class="medieval-font text-amber-100 text-lg mt-8 mb-6 italic">
+                Scale the ancient spiral tower of Doom. Beware of the nested snakes inside dungeon doors and leverage ancient magic portals to rise! Now extending to 100 legendary stairs.
+            </p>
+
+            <!-- Configuration Section -->
+            <div class="space-y-6 text-left mb-8">
+                <div>
+                    <label class="block text-amber-400 font-bold mb-2 fantasy-title"><i class="fa-solid fa-users mr-2"></i>Select Players</label>
+                    <div class="grid grid-cols-4 gap-2" id="player-count-buttons">
+                        <button onclick="setPlayerCount(1)" class="py-2 px-4 rounded bg-amber-800 text-white font-bold border-2 border-amber-600 hover:bg-amber-700 transition" id="pbtn-1">1 Player</button>
+                        <button onclick="setPlayerCount(2)" class="py-2 px-4 rounded bg-stone-800 text-stone-300 font-bold border-2 border-stone-700 hover:bg-stone-700 transition" id="pbtn-2">2 Players</button>
+                        <button onclick="setPlayerCount(3)" class="py-2 px-4 rounded bg-stone-800 text-stone-300 font-bold border-2 border-stone-700 hover:bg-stone-700 transition" id="pbtn-3">3 Players</button>
+                        <button onclick="setPlayerCount(4)" class="py-2 px-4 rounded bg-stone-800 text-stone-300 font-bold border-2 border-stone-700 hover:bg-stone-700 transition" id="pbtn-4">4 Players</button>
+                    </div>
+                </div>
+
+                <div id="player-inputs-container" class="space-y-3 bg-stone-900 bg-opacity-50 p-4 rounded border border-stone-800">
+                    <!-- Dynamic player configuration will load here -->
+                </div>
+
+                <div>
+                    <label class="block text-amber-400 font-bold mb-2 fantasy-title"><i class="fa-solid fa-gauge-high mr-2"></i>Game Speed</label>
+                    <select id="game-speed" class="w-full bg-stone-800 border-2 border-stone-700 text-stone-200 p-2.5 rounded font-bold focus:outline-none focus:border-amber-500">
+                        <option value="1.5">Adventurer (Normal Action)</option>
+                        <option value="3.0" selected>Hero (Fast Action)</option>
+                        <option value="5.0">Legend (Super Speed)</option>
+                    </select>
+                </div>
+            </div>
+
+            <button onclick="startGame()" class="w-full py-4 px-6 text-2xl font-black rounded red-ribbon text-amber-300 tracking-widest hover:brightness-125 transition duration-300 flex items-center justify-center gap-3 shadow-lg">
+                <i class="fa-solid fa-play"></i> START CLIMB
+            </button>
+        </div>
+    </div>
+
+    <!-- Main Game Play Interface -->
+    <div class="flex-1 h-full relative" id="game-container">
+        <!-- 3D Canvas Target -->
+        <div id="threejs-canvas" class="w-full h-full absolute inset-0 bg-[#dad5c6]"></div>
+
+        <!-- Upper Right: "Gameplay with a twist" decorative banner from image 2 -->
+        <div class="absolute top-4 right-4 z-40 flex flex-col items-end gap-2">
+            <div class="red-ribbon px-6 py-2 rounded shadow-lg transform rotate-2 text-right">
+                <div class="text-xs tracking-widest font-bold text-red-200">MEDIEVAL SNAKES & LADDERS</div>
+                <div class="fantasy-title text-lg font-black text-amber-300">GAMEPLAY WITH A TWIST</div>
+            </div>
+            <!-- Settings panel toggle -->
+            <button onclick="toggleAudio()" id="audio-btn" class="bg-stone-900 bg-opacity-80 p-3 rounded-full border border-stone-700 hover:bg-stone-800 transition text-amber-400 text-sm flex items-center justify-center gap-2">
+                <i id="audio-icon" class="fa-solid fa-volume-high"></i> <span class="text-xs font-bold text-stone-300">SOUND ON</span>
+            </button>
+        </div>
+
+        <!-- Left Column Panels: Leaderboard / Stairs matching image 3 -->
+        <div class="absolute top-4 left-4 z-40 w-80 flex flex-col gap-3 pointer-events-none">
+            <!-- Game Title Panel -->
+            <div class="wood-panel p-4 rounded-lg flex flex-col gap-3 border-b-4 border-amber-800 pointer-events-auto">
+                <div>
+                    <h2 class="fantasy-title text-lg font-black text-amber-400">CASTLE STAIRS</h2>
+                    <p class="text-xs text-stone-400">Reach Stair 100 to Win!</p>
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="restartGame()" class="flex-1 p-2 bg-amber-950 text-amber-400 hover:bg-amber-900 rounded transition border border-amber-800 text-xs font-bold flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-rotate-right"></i> RESTART
+                    </button>
+                    <button onclick="resetToMenu()" class="flex-1 p-2 bg-red-950 text-red-400 hover:bg-red-900 rounded transition border border-red-800 text-xs font-bold flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-house"></i> MENU
+                    </button>
+                </div>
+            </div>
+
+            <!-- Players / Stair Tracker List -->
+            <div id="player-scorecards" class="space-y-2 pointer-events-auto">
+                <!-- Dynamic Player Cards rendered like:
+                     PLAYER 1
+                     STAIR: 3
+                -->
+            </div>
+        </div>
+
+        <!-- Bottom Controls Bar (Dice rolling panel) -->
+        <div class="absolute bottom-6 left-1/2 transform -translate-x-1/2 z-40 w-full max-w-md px-4">
+            <div class="wood-panel p-5 rounded-xl flex flex-col items-center gap-4 text-center">
+                <!-- Active Turn Display -->
+                <div id="turn-announcer" class="text-xl fantasy-title font-black text-amber-400 tracking-wide">
+                    Loading tower...
+                </div>
+
+                <!-- Roll Interaction Container -->
+                <div class="flex items-center gap-6 justify-center w-full">
+                    <!-- Medieval 3D-styled CSS Dice -->
+                    <div id="dice-visual-container" class="relative w-16 h-16 flex items-center justify-center bg-stone-900 rounded-lg border-2 border-amber-600 shadow-inner">
+                        <span id="dice-value" class="medieval-font text-4xl font-extrabold text-amber-400">1</span>
+                    </div>
+
+                    <!-- Action Roll Button -->
+                    <button id="roll-button" onclick="handleRoll()" class="flex-1 py-4 px-6 rounded red-ribbon text-amber-300 font-extrabold text-xl tracking-wider hover:brightness-110 active:scale-95 transition disabled:opacity-50 disabled:pointer-events-none">
+                        <i class="fa-solid fa-dice mr-2"></i> ROLL DICE
+                    </button>
+                </div>
+
+                <!-- Helper tip box -->
+                <div id="game-tip" class="text-xs text-stone-400 italic">
+                    Camera tracks you perfectly. Drag screen to inspect the tower manually! (Low Quality Mode Active)
+                </div>
+            </div>
+        </div>
+
+        <!-- Cinematic Cutscene Banner Notification (For Snakes & Ladders Landing) -->
+        <div id="event-notification" class="absolute inset-x-0 top-1/3 z-40 flex justify-center pointer-events-none transform scale-0 transition-transform duration-300">
+            <div class="px-8 py-5 rounded-xl text-center max-w-lg shadow-2xl relative" id="event-box">
+                <h3 id="event-title" class="fantasy-title text-3xl font-black text-white drop-shadow">PORTAL LANDED!</h3>
+                <p id="event-desc" class="medieval-font text-lg text-amber-100 mt-2">Elevated up steps!</p>
+            </div>
+        </div>
+
+        <!-- Game Over Modal -->
+        <div id="victory-modal" class="absolute inset-0 z-50 hidden bg-stone-950 bg-opacity-95 flex flex-col items-center justify-center p-6 text-center">
+            <div class="max-w-md wood-panel p-8 rounded-lg space-y-6">
+                <i class="fa-solid fa-trophy text-6xl text-amber-400 animate-bounce"></i>
+                <h2 class="fantasy-title text-3xl font-black text-amber-300" id="winner-title">PLAYER 1 VICTORIOUS!</h2>
+                <p class="medieval-font text-xl text-amber-100 italic">
+                    You have conquered the Dungeon Castle stairs and achieved immortality!
+                </p>
+                <div class="flex gap-4">
+                    <button onclick="restartGame()" class="flex-1 py-3 px-6 rounded bg-amber-800 text-white font-bold border border-amber-600 hover:bg-amber-700 transition">
+                        Play Again
+                    </button>
+                    <button onclick="resetToMenu()" class="flex-1 py-3 px-6 rounded bg-stone-800 text-stone-300 font-bold border border-stone-700 hover:bg-stone-700 transition">
+                        Main Menu
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const TOTAL_STAIRS = 100;
+        let players = [];
+        let activePlayerIndex = 0;
+        let isMoving = false;
+        let soundEnabled = true;
+        let gameSpeedFactor = 3.0; // Higher = faster camera/movement
+        let synth = null;
+        let portalSynth = null;
+        let snakeSynth = null;
+        let snakeHissSynth = null;
+
+        // Ladders: Glowing Portals that boost stairs
+        const LADDERS = {
+            3: 18, 11: 28, 19: 38, 28: 48, 35: 55, 45: 67, 58: 75, 68: 85, 78: 92, 88: 97
+        };
+
+        // Snakes: Scary Dungeon Doors that slide you down
+        const SNAKES = {
+            17: 5, 23: 10, 33: 15, 44: 20, 52: 30, 64: 40, 73: 50, 84: 60, 95: 70, 99: 9
+        };
+
+        // Standard profiles for character selection/preset
+        const DEFAULT_PROFILES = [
+            { name: "Adventurer", color: "#e11d48", modelColor: 0xe11d48 }, // Red
+            { name: "Nia", color: "#2563eb", modelColor: 0x2563eb },        // Blue
+            { name: "Jay", color: "#16a34a", modelColor: 0x16a34a },        // Green
+            { name: "Walter", color: "#d97706", modelColor: 0xd97706 }     // Orange
+        ];
+
+        let selectedPlayerCount = 1;
+
+        // Three.js Globals
+        let scene, camera, renderer;
+        let stairsGroup, portalsGroup, doorsGroup;
+        let pawnsGroup = null; // Container strictly for player meshes
+        let castleTower;
+        const stairDataPositions = [];
+        const stepAngleIncrement = 0.38;
+        const stepHeightIncrement = 0.35;
+        const towerRadius = 4.0;
+
+        let activePortalsList = [];
+        let activeDoorsList = [];
+        let animatedSnakes = [];
+        let cloudsList = [];
+        let snakeMeshGroup = null;
+
+        let isDragging = false;
+        let prevMouseX = 0, prevMouseY = 0;
+        let cameraAngleX = -Math.PI / 4;
+        let cameraAngleY = 0.2; // side view baseline height
+        let targetCameraRadius = 14;
+        let currentCameraRadius = 14;
+        let followPlayer = true;
+
+        // Base camera rotation that updates with player movement
+        let targetCameraAngleX = -Math.PI / 4;
+
+        function initAudio() {
+            if (synth) return;
+            try {
+                Tone.start();
+                synth = new Tone.Synth({
+                    oscillator: { type: "triangle" },
+                    envelope: { attack: 0.05, decay: 0.1, sustain: 0.2, release: 0.1 }
+                }).toDestination();
+
+                portalSynth = new Tone.PolySynth(Tone.Synth).toDestination();
+                portalSynth.set({
+                    oscillator: { type: "triangle" },
+                    envelope: { attack: 0.05, decay: 0.1, sustain: 0.3, release: 1 }
+                });
+
+                snakeSynth = new Tone.FMSynth({
+                    harmonicity: 1.5,
+                    modulationIndex: 5,
+                    oscillator: { type: "square" },
+                    envelope: { attack: 0.05, decay: 0.5, sustain: 0.1, release: 1 }
+                }).toDestination();
+
+                snakeHissSynth = new Tone.NoiseSynth({
+                    noise: { type: "white" },
+                    envelope: { attack: 0.1, decay: 0.8, sustain: 0.2, release: 0.5 }
+                }).toDestination();
+            } catch (e) {
+                console.warn("Audio init failed", e);
+            }
+        }
+
+        function toggleAudio() {
+            soundEnabled = !soundEnabled;
+            const btn = document.getElementById("audio-btn");
+            const icon = document.getElementById("audio-icon");
+            if (soundEnabled) {
+                icon.className = "fa-solid fa-volume-high";
+                btn.querySelector("span").innerText = "SOUND ON";
+            } else {
+                icon.className = "fa-solid fa-volume-xmark";
+                btn.querySelector("span").innerText = "SOUND OFF";
+            }
+        }
+
+        function playSound(type) {
+            if (!soundEnabled) return;
+            initAudio();
+            try {
+                const now = Tone.now();
+                if (type === 'roll') {
+                    synth.triggerAttackRelease("C3", "16n", now);
+                    synth.triggerAttackRelease("G3", "16n", now + 0.05);
+                    synth.triggerAttackRelease("C4", "16n", now + 0.10);
+                } else if (type === 'step') {
+                    synth.triggerAttackRelease("E4", "32n", now);
+                } else if (type === 'portal') {
+                    portalSynth.triggerAttackRelease(["C4", "E4", "G4"], "8n", now);
+                    portalSynth.triggerAttackRelease(["E4", "G4", "B4"], "8n", now + 0.15);
+                    portalSynth.triggerAttackRelease(["G4", "C5", "E5"], "4n", now + 0.3);
+                } else if (type === 'snake') {
+                    snakeSynth.triggerAttackRelease("E3", "1.5s", now);
+                    snakeSynth.frequency.setValueAtTime("E3", now);
+                    snakeSynth.frequency.exponentialRampToValueAtTime("E1", now + 1.0);
+                    
+                    if (snakeHissSynth) {
+                        snakeHissSynth.triggerAttackRelease("1.2s", now);
+                    }
+                } else if (type === 'victory') {
+                    const poly = new Tone.PolySynth().toDestination();
+                    poly.triggerAttackRelease(["C4", "E4", "G4", "C5"], "1s", now);
+                }
+            } catch (e) {
+                console.warn("Audio playing issue:", e);
+            }
+        }
+
+        function setPlayerCount(num) {
+            selectedPlayerCount = num;
+            for (let i = 1; i <= 4; i++) {
+                const btn = document.getElementById(`pbtn-${i}`);
+                if (i === num) {
+                    btn.className = "py-2 px-4 rounded bg-amber-800 text-white font-bold border-2 border-amber-600 hover:bg-amber-700 transition";
+                } else {
+                    btn.className = "py-2 px-4 rounded bg-stone-800 text-stone-300 font-bold border-2 border-stone-700 hover:bg-stone-700 transition";
+                }
+            }
+            renderPlayerInputs();
+        }
+
+        function renderPlayerInputs() {
+            const container = document.getElementById("player-inputs-container");
+            container.innerHTML = "";
+
+            for (let i = 0; i < selectedPlayerCount; i++) {
+                const profile = DEFAULT_PROFILES[i];
+                container.innerHTML += `
+                    <div class="flex items-center gap-4">
+                        <div class="w-4 h-4 rounded-full" style="background-color: ${profile.color}"></div>
+                        <div class="flex-1">
+                            <label class="block text-xs text-amber-500 font-bold uppercase">Player ${i+1} Name</label>
+                            <input type="text" id="player-name-${i}" value="${profile.name}" class="w-full bg-stone-800 text-white border border-stone-700 rounded p-1.5 px-3 text-sm font-semibold focus:outline-none focus:border-amber-500">
+                        </div>
+                    </div>
+                `;
+            }
+
+            if (selectedPlayerCount === 1) {
+                container.innerHTML += `
+                    <div class="flex items-center gap-4 border-t border-stone-800 pt-2 mt-2">
+                        <div class="w-4 h-4 rounded-full bg-stone-500"></div>
+                        <div class="flex-1">
+                            <label class="block text-xs text-stone-400 font-bold uppercase">Opponent Bot</label>
+                            <input type="text" id="player-name-bot" value="Dungeon Bot" disabled class="w-full bg-stone-900 text-stone-400 border border-stone-800 rounded p-1.5 px-3 text-sm font-semibold cursor-not-allowed">
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        setPlayerCount(1);
+
+        function clearBoard() {
+            // Brute force empty the container so no pawns persist across sessions
+            if (pawnsGroup) {
+                while(pawnsGroup.children.length > 0) {
+                    pawnsGroup.remove(pawnsGroup.children[0]);
+                }
+            }
+            players = [];
+        }
+
+        function startGame() {
+            clearBoard(); // Clean the board completely on start
+            
+            for (let i = 0; i < selectedPlayerCount; i++) {
+                const nameInput = document.getElementById(`player-name-${i}`);
+                const profile = DEFAULT_PROFILES[i];
+                players.push({
+                    id: i,
+                    name: nameInput ? nameInput.value.trim() : `Player ${i+1}`,
+                    stair: 0,
+                    targetStair: 0,
+                    color: profile.color,
+                    modelColor: profile.modelColor,
+                    isBot: false,
+                    avatar: null,
+                    basePosition: new THREE.Vector3() // For smooth shake-free tracking
+                });
+            }
+
+            if (selectedPlayerCount === 1) {
+                players.push({
+                    id: 99,
+                    name: "Dungeon Bot",
+                    stair: 0,
+                    targetStair: 0,
+                    color: "#94a3b8",
+                    modelColor: 0x94a3b8,
+                    isBot: true,
+                    avatar: null,
+                    basePosition: new THREE.Vector3()
+                });
+            }
+
+            gameSpeedFactor = parseFloat(document.getElementById("game-speed").value);
+
+            document.getElementById("setup-screen").classList.add("hidden");
+            document.getElementById("victory-modal").classList.add("hidden");
+
+            buildPlayerScorecards();
+            
+            activePlayerIndex = 0;
+            isMoving = false; 
+            followPlayer = true;
+
+            initAudio();
+
+            // Instantly place players on stair 0 without any drop-in
+            resetPlayerPositionsIn3D();
+            updateTurnInterface();
+        }
+
+        function restartGame() {
+            clearBoard();
+            startGame();
+        }
+
+        function resetToMenu() {
+            clearBoard(); // Clean the board completely on exit
+            document.getElementById("setup-screen").classList.remove("hidden");
+            document.getElementById("victory-modal").classList.add("hidden");
+        }
+
+        function buildPlayerScorecards() {
+            const container = document.getElementById("player-scorecards");
+            container.innerHTML = "";
+
+            players.forEach((p, idx) => {
+                container.innerHTML += `
+                    <div id="card-${idx}" class="wood-panel p-3 rounded-lg flex items-center justify-between border-l-4 transition-all duration-300" style="border-left-color: ${p.color}">
+                        <div>
+                            <div class="fantasy-title font-black text-sm text-stone-200 tracking-wider">${p.name.toUpperCase()}</div>
+                            <div class="text-xs text-amber-500 font-extrabold medieval-font">STAIR: <span id="card-stair-${idx}">0</span></div>
+                        </div>
+                        <div class="h-8 w-8 rounded-full flex items-center justify-center text-xs font-black shadow-inner" style="background-color: ${p.color}44; color: ${p.color}">
+                            #${idx + 1}
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function updateTurnInterface() {
+            if (players.length === 0) return;
+            players.forEach((p, idx) => {
+                const card = document.getElementById(`card-${idx}`);
+                if (!card) return;
+                if (idx === activePlayerIndex) {
+                    card.classList.add("scale-105", "brightness-125", "shadow-amber-500/20");
+                    card.style.backgroundColor = "rgba(120, 90, 60, 0.4)";
+                } else {
+                    card.classList.remove("scale-105", "brightness-125", "shadow-amber-500/20");
+                    card.style.backgroundColor = "transparent";
+                }
+            });
+
+            const active = players[activePlayerIndex];
+            const announcer = document.getElementById("turn-announcer");
+            const rollBtn = document.getElementById("roll-button");
+
+            if (active.isBot) {
+                announcer.innerHTML = `<span class="animate-pulse text-stone-400 font-extrabold"><i class="fa-solid fa-robot mr-2"></i>${active.name.toUpperCase()}'S TURN (ROLLING...)</span>`;
+                rollBtn.disabled = true;
+                setTimeout(() => {
+                    if (players[activePlayerIndex] && players[activePlayerIndex].isBot) {
+                        handleRoll();
+                    }
+                }, 1500);
+            } else {
+                announcer.innerHTML = `<span class="text-amber-300"><i class="fa-solid fa-user mr-2"></i>YOUR TURN (${active.name.toUpperCase()})</span>`;
+                rollBtn.disabled = false;
+            }
+        }
+    </script>
+
+    <script>
+        window.addEventListener('load', () => {
+            init3D();
+            animate();
+        });
+
+        function init3D() {
+            const container = document.getElementById("threejs-canvas");
+            
+            scene = new THREE.Scene();
+            // Light Background as requested with a morning mist aesthetic
+            scene.fog = new THREE.FogExp2(0xdad5c6, 0.035); 
+
+            camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 150);
+            camera.position.set(0, 15, 25);
+
+            renderer = new THREE.WebGLRenderer({ antialias: false });
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            renderer.shadowMap.enabled = false;
+            renderer.setClearColor(scene.fog.color);
+            container.appendChild(renderer.domElement);
+
+            const ambient = new THREE.AmbientLight(0xffffff, 0.55);
+            scene.add(ambient);
+
+            const sunLight = new THREE.DirectionalLight(0xffeedd, 0.75);
+            sunLight.position.set(10, 40, 10);
+            scene.add(sunLight);
+
+            stairsGroup = new THREE.Group();
+            portalsGroup = new THREE.Group();
+            doorsGroup = new THREE.Group();
+            pawnsGroup = new THREE.Group(); // Dedicated container
+            
+            scene.add(stairsGroup);
+            scene.add(portalsGroup);
+            scene.add(doorsGroup);
+            scene.add(pawnsGroup);
+
+            // Generate low quality textures
+            const stoneTexture = generateStoneTexture();
+            const woodTexture = generateWoodTexture();
+
+            buildCastleTower(stoneTexture);
+            buildSpiralStairs(stoneTexture);
+            buildPortals();
+            buildDoors(woodTexture);
+            buildSnakes();
+            buildGround();
+
+            buildSkyEnvironment();
+
+            window.addEventListener('resize', onWindowResize);
+
+            container.addEventListener('mousedown', onMouseDown);
+            container.addEventListener('mousemove', onMouseMove);
+            window.addEventListener('mouseup', onMouseUp);
+            container.addEventListener('wheel', onWheel);
+
+            container.addEventListener('touchstart', onTouchStart, { passive: true });
+            container.addEventListener('touchmove', onTouchMove, { passive: true });
+            container.addEventListener('touchend', onTouchEnd, { passive: true });
+        }
+
+        function generateStoneTexture() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 64;
+            canvas.height = 64;
+            const ctx = canvas.getContext('2d');
+
+            ctx.fillStyle = "#3a3a3c";
+            ctx.fillRect(0, 0, 64, 64);
+
+            ctx.strokeStyle = "#1a1a1c";
+            ctx.lineWidth = 2;
+            for (let r = 0; r < 4; r++) {
+                const y = r * 16;
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(64, y);
+                ctx.stroke();
+
+                const shift = (r % 2) * 16;
+                for (let c = 0; c <= 3; c++) {
+                    const x = c * 32 - shift;
+                    ctx.beginPath();
+                    ctx.moveTo(x, y);
+                    ctx.lineTo(x, y + 16);
+                    ctx.stroke();
+                }
+            }
+
+            const texture = new THREE.CanvasTexture(canvas);
+            texture.wrapS = THREE.RepeatWrapping;
+            texture.wrapT = THREE.RepeatWrapping;
+            texture.minFilter = THREE.NearestFilter;
+            texture.magFilter = THREE.NearestFilter;
+            return texture;
+        }
+
+        function generateWoodTexture() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 32;
+            canvas.height = 32;
+            const ctx = canvas.getContext('2d');
+
+            ctx.fillStyle = "#5c3d26";
+            ctx.fillRect(0, 0, 32, 32);
+
+            ctx.strokeStyle = "#22140a";
+            ctx.lineWidth = 2;
+            for (let i = 0; i < 32; i += 8) {
+                ctx.beginPath();
+                ctx.moveTo(i, 0);
+                ctx.lineTo(i, 32);
+                ctx.stroke();
+            }
+
+            const texture = new THREE.CanvasTexture(canvas);
+            texture.minFilter = THREE.NearestFilter;
+            texture.magFilter = THREE.NearestFilter;
+            return texture;
+        }
+
+        function buildCastleTower(stoneTex) {
+            const towerHeight = (TOTAL_STAIRS + 5) * stepHeightIncrement;
+            const geometry = new THREE.CylinderGeometry(towerRadius, towerRadius, towerHeight, 10);
+            
+            const castleTex = stoneTex.clone();
+            castleTex.repeat.set(2, 12);
+            castleTex.needsUpdate = true;
+
+            const material = new THREE.MeshLambertMaterial({
+                map: castleTex,
+                color: 0xaaaaaa
+            });
+
+            castleTower = new THREE.Mesh(geometry, material);
+            castleTower.position.y = towerHeight / 2 - 1.5;
+            scene.add(castleTower);
+        }
+
+        function buildSpiralStairs(stoneTex) {
+            const stepWidth = 2.2;
+            const stepDepth = 0.9;
+            const stepThickness = 0.25;
+
+            const stepGeometry = new THREE.BoxGeometry(stepWidth, stepThickness, stepDepth);
+            
+            const stepTex = stoneTex.clone();
+            stepTex.repeat.set(1, 1);
+            stepTex.needsUpdate = true;
+
+            const stepMat = new THREE.MeshLambertMaterial({
+                map: stepTex,
+                color: 0x999999
+            });
+
+            const landingGeo = new THREE.BoxGeometry(3.5, 0.3, 3);
+            const landingMesh = new THREE.Mesh(landingGeo, stepMat);
+            landingMesh.position.set(towerRadius + 1.2, 0.2, 0);
+            stairsGroup.add(landingMesh);
+
+            stairDataPositions[0] = {
+                vector: new THREE.Vector3(towerRadius + 1.2, 0.2, 0),
+                rotationY: 0
+            };
+
+            for (let i = 1; i <= TOTAL_STAIRS; i++) {
+                const angle = i * stepAngleIncrement;
+                const height = i * stepHeightIncrement;
+
+                const radiusOffset = towerRadius + (stepWidth / 2) - 0.2;
+                const x = Math.cos(angle) * radiusOffset;
+                const z = Math.sin(angle) * radiusOffset;
+
+                const stepMesh = new THREE.Mesh(stepGeometry, stepMat);
+                stepMesh.position.set(x, height, z);
+                stepMesh.rotation.y = -angle;
+                stairsGroup.add(stepMesh);
+
+                createStairNumberTag(i, x, height, z, -angle);
+
+                stairDataPositions[i] = {
+                    vector: new THREE.Vector3(x, height + 0.15, z),
+                    rotationY: -angle
+                };
+
+                if (i % 8 === 4 && i < TOTAL_STAIRS - 2) {
+                    addWallLantern(x, height, z, -angle);
+                }
+            }
+        }
+
+        function addWallLantern(x, y, z, rotY) {
+            const bracketGeo = new THREE.BoxGeometry(0.15, 0.15, 0.7);
+            const woodMat = new THREE.MeshLambertMaterial({ color: 0x3d2a1d });
+            const bracket = new THREE.Mesh(bracketGeo, woodMat);
+            
+            bracket.position.set(x, y + 1.2, z);
+            bracket.rotation.y = rotY;
+            bracket.translateZ(-0.4);
+            stairsGroup.add(bracket);
+
+            const lanternGeo = new THREE.BoxGeometry(0.3, 0.4, 0.3);
+            const glassMat = new THREE.MeshLambertMaterial({
+                color: 0xffbb66,
+                emissive: 0xaa5500
+            });
+            const lantern = new THREE.Mesh(lanternGeo, glassMat);
+            lantern.position.copy(bracket.position);
+            lantern.translateZ(0.25);
+            lantern.position.y -= 0.35;
+            stairsGroup.add(lantern);
+
+            const flameLight = new THREE.PointLight(0xff6600, 1.0, 4);
+            flameLight.position.copy(lantern.position);
+            stairsGroup.add(flameLight);
+        }
+
+        function createStairNumberTag(num, x, y, z, rotY) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 64; 
+            canvas.height = 64;
+            const ctx = canvas.getContext('2d');
+
+            ctx.fillStyle = 'rgba(0,0,0,0)';
+            ctx.fillRect(0, 0, 64, 64);
+
+            // Painted orange/amber numbers matching image
+            ctx.fillStyle = "#f97316";
+            ctx.font = 'bold 44px "Almendra", Georgia, serif';
+            ctx.textBaseline = 'middle';
+            ctx.textAlign = 'center';
+            
+            // Text shadow for high readability
+            ctx.shadowColor = "rgba(0, 0, 0, 0.8)";
+            ctx.shadowBlur = 4;
+            ctx.shadowOffsetX = 2;
+            ctx.shadowOffsetY = 2;
+            
+            ctx.fillText(num.toString(), 32, 32);
+
+            const texture = new THREE.CanvasTexture(canvas);
+            texture.minFilter = THREE.NearestFilter;
+            texture.magFilter = THREE.NearestFilter;
+
+            const mat = new THREE.SpriteMaterial({ map: texture, transparent: true });
+            const sprite = new THREE.Sprite(mat);
+            
+            const angle = -rotY; 
+            const wallSurfaceRadius = towerRadius + 0.15;
+            
+            sprite.position.set(
+                Math.cos(angle) * wallSurfaceRadius,
+                y + 0.75, 
+                Math.sin(angle) * wallSurfaceRadius
+            );
+            sprite.scale.set(1.4, 1.4, 1.4);
+            stairsGroup.add(sprite);
+        }
+
+        function buildGround() {
+            const courtyardGeo = new THREE.CylinderGeometry(15, 15, 0.5, 16);
+            const courtyardMat = new THREE.MeshLambertMaterial({ color: 0x4a4a4a });
+            const courtyard = new THREE.Mesh(courtyardGeo, courtyardMat);
+            courtyard.position.y = -0.25;
+            scene.add(courtyard);
+
+            const grassGeo = new THREE.CylinderGeometry(30, 30, 0.4, 16);
+            const grassMat = new THREE.MeshLambertMaterial({ color: 0x3d5229 });
+            const grass = new THREE.Mesh(grassGeo, grassMat);
+            grass.position.y = -0.7;
+            scene.add(grass);
+        }
+
+        function generateSkyTexture() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 1;
+            canvas.height = 256;
+            const ctx = canvas.getContext('2d');
+            const grad = ctx.createLinearGradient(0, 0, 0, 256);
+            grad.addColorStop(0, '#a2b9bc'); // Slate blue dawn
+            grad.addColorStop(0.5, '#dad5c6'); // Morning mist center
+            grad.addColorStop(1, '#e3d7c5'); // Warm horizon
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, 1, 256);
+            
+            const texture = new THREE.CanvasTexture(canvas);
+            return texture;
+        }
+
+        function buildSkyEnvironment() {
+            // Low poly gradient sky sphere
+            const skyGeo = new THREE.SphereGeometry(90, 8, 8);
+            const skyMat = new THREE.MeshBasicMaterial({
+                map: generateSkyTexture(),
+                side: THREE.BackSide,
+                depthWrite: false
+            });
+            const sky = new THREE.Mesh(skyGeo, skyMat);
+            scene.add(sky);
+
+            // Distant flat-shaded mountain cones
+            const mountainGroup = new THREE.Group();
+            const mountainMat = new THREE.MeshLambertMaterial({ color: 0x8fa3a6 });
+            for (let i = 0; i < 8; i++) {
+                const height = 15 + Math.random() * 20;
+                const radius = 10 + Math.random() * 15;
+                const mountainGeo = new THREE.ConeGeometry(radius, height, 4); // 4-sided for retro feel
+                const mountain = new THREE.Mesh(mountainGeo, mountainMat);
+                
+                const angle = (i / 8) * Math.PI * 2 + Math.random() * 0.5;
+                const dist = 55 + Math.random() * 10;
+                mountain.position.set(Math.cos(angle) * dist, height / 2 - 10, Math.sin(angle) * dist);
+                mountainGroup.add(mountain);
+            }
+            scene.add(mountainGroup);
+
+            // Drifting blocky volumetric clouds
+            const cloudGroup = new THREE.Group();
+            const cloudMat = new THREE.MeshLambertMaterial({ color: 0xf4ede2 });
+            cloudsList = [];
+            for (let i = 0; i < 12; i++) {
+                const singleCloud = new THREE.Group();
+                const numBoxes = 3 + Math.floor(Math.random() * 3);
+                for (let j = 0; j < numBoxes; j++) {
+                    const w = 1.5 + Math.random() * 2;
+                    const h = 0.8 + Math.random() * 0.8;
+                    const d = 1.2 + Math.random() * 1.5;
+                    const boxGeo = new THREE.BoxGeometry(w, h, d);
+                    const box = new THREE.Mesh(boxGeo, cloudMat);
+                    box.position.set(
+                        (j - numBoxes/2) * 1.0,
+                        (Math.random() - 0.5) * 0.3,
+                        (Math.random() - 0.5) * 0.5
+                    );
+                    singleCloud.add(box);
+                }
+                
+                const angle = Math.random() * Math.PI * 2;
+                const dist = 18 + Math.random() * 12;
+                const height = 5 + Math.random() * 35;
+                singleCloud.position.set(Math.cos(angle) * dist, height, Math.sin(angle) * dist);
+                
+                singleCloud.userData = {
+                    angle: angle,
+                    distance: dist,
+                    speed: 0.001 + Math.random() * 0.002,
+                    height: height
+                };
+                
+                cloudGroup.add(singleCloud);
+                cloudsList.push(singleCloud);
+            }
+            scene.add(cloudGroup);
+        }
+
+        function buildPortals() {
+            Object.keys(LADDERS).forEach(startKey => {
+                const startStair = parseInt(startKey);
+                const pos = stairDataPositions[startStair];
+                if (!pos) return;
+
+                const ringGeo = new THREE.TorusGeometry(0.7, 0.08, 4, 12);
+                const ringMat = new THREE.MeshBasicMaterial({
+                    color: 0x11cc44,
+                    transparent: true,
+                    opacity: 0.7
+                });
+                const ring = new THREE.Mesh(ringGeo, ringMat);
+                ring.position.copy(pos.vector);
+                ring.position.y += 0.05;
+                ring.rotation.x = Math.PI / 2;
+                portalsGroup.add(ring);
+
+                const beamGeo = new THREE.CylinderGeometry(0.5, 0.5, 2.0, 8, 1, true);
+                const beamMat = new THREE.MeshBasicMaterial({
+                    color: 0x11cc44,
+                    transparent: true,
+                    opacity: 0.2,
+                    side: THREE.DoubleSide
+                });
+                const beam = new THREE.Mesh(beamGeo, beamMat);
+                beam.position.copy(pos.vector);
+                beam.position.y += 1.0;
+                portalsGroup.add(beam);
+
+                activePortalsList.push({ ring, beam, startStair });
+            });
+        }
+
+        function buildDoors(woodTex) {
+            Object.keys(SNAKES).forEach(startKey => {
+                const startStair = parseInt(startKey);
+                const pos = stairDataPositions[startStair];
+                if (!pos) return;
+
+                const frameMat = new THREE.MeshLambertMaterial({ color: 0x2e2e2e });
+                const arch = new THREE.Group();
+
+                const leftPost = new THREE.Mesh(new THREE.BoxGeometry(0.2, 2.0, 0.2), frameMat);
+                leftPost.position.set(-0.6, 1.0, 0);
+                arch.add(leftPost);
+
+                const rightPost = new THREE.Mesh(new THREE.BoxGeometry(0.2, 2.0, 0.2), frameMat);
+                rightPost.position.set(0.6, 1.0, 0);
+                arch.add(rightPost);
+
+                const topArch = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.2, 0.2), frameMat);
+                topArch.position.set(0, 2.0, 0);
+                arch.add(topArch);
+
+                const interiorGeo = new THREE.PlaneGeometry(1.0, 1.8);
+                const interiorMat = new THREE.MeshBasicMaterial({ color: 0x000000 });
+                const interior = new THREE.Mesh(interiorGeo, interiorMat);
+                interior.position.set(0, 1.0, 0.02);
+                arch.add(interior);
+
+                const doorGeo = new THREE.BoxGeometry(1.0, 1.8, 0.08);
+                const doorMat = new THREE.MeshLambertMaterial({ map: woodTex });
+                const doorLeft = new THREE.Mesh(doorGeo, doorMat);
+                doorLeft.position.set(0, 1.0, 0.06);
+                arch.add(doorLeft);
+
+                arch.position.copy(pos.vector);
+                arch.rotation.y = pos.rotationY;
+                arch.translateZ(-0.45);
+
+                doorsGroup.add(arch);
+
+                activeDoorsList.push({ arch, doorLeft, startStair, openAngle: 0 });
+            });
+        }
+
+        function buildSnakes() {
+            snakeMeshGroup = new THREE.Group();
+            scene.add(snakeMeshGroup);
+
+            Object.entries(SNAKES).forEach(([start, end]) => {
+                const sIdx = parseInt(start);
+                const eIdx = parseInt(end);
+                
+                const startPos = stairDataPositions[sIdx].vector;
+                const endPos = stairDataPositions[eIdx].vector;
+
+                const points = [];
+                points.push(startPos.clone().add(new THREE.Vector3(0, 1.0, 0)));
+
+                const stepsDiff = sIdx - eIdx;
+                for (let step = 1; step < stepsDiff; step++) {
+                    const midIdx = sIdx - step;
+                    const stepCoord = stairDataPositions[midIdx];
+                    if (stepCoord) {
+                        const rOffset = 0.5 * Math.sin((step / stepsDiff) * Math.PI * 2);
+                        const wavePt = stepCoord.vector.clone().add(new THREE.Vector3(0, 0.5, 0));
+                        wavePt.x += Math.cos(stepCoord.rotationY) * rOffset;
+                        wavePt.z += Math.sin(stepCoord.rotationY) * rOffset;
+                        points.push(wavePt);
+                    }
+                }
+                points.push(endPos.clone().add(new THREE.Vector3(0, 0.25, 0)));
+
+                const curve = new THREE.CatmullRomCurve3(points);
+                const tubeGeo = new THREE.TubeGeometry(curve, 16, 0.12, 4, false);
+                
+                const tubeMat = new THREE.MeshLambertMaterial({
+                    color: 0x472d1a,
+                    transparent: true,
+                    opacity: 0.45
+                });
+
+                const snakeTube = new THREE.Mesh(tubeGeo, tubeMat);
+                snakeMeshGroup.add(snakeTube);
+
+                const headGeo = new THREE.BoxGeometry(0.5, 0.5, 0.5);
+                const headMat = new THREE.MeshLambertMaterial({ color: 0x2e1b10 });
+                const head = new THREE.Mesh(headGeo, headMat);
+                head.position.copy(startPos).add(new THREE.Vector3(0, 1.0, 0));
+                snakeMeshGroup.add(head);
+
+                const eyeGeo = new THREE.BoxGeometry(0.08, 0.08, 0.08);
+                const eyeMat = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+                
+                const leftEye = new THREE.Mesh(eyeGeo, eyeMat);
+                leftEye.position.set(-0.15, 0.15, 0.25);
+                head.add(leftEye);
+
+                const rightEye = new THREE.Mesh(eyeGeo, eyeMat);
+                rightEye.position.set(0.15, 0.15, 0.25);
+                head.add(rightEye);
+
+                animatedSnakes.push({
+                    startStair: sIdx,
+                    endStair: eIdx,
+                    tube: snakeTube,
+                    head: head,
+                    basePos: head.position.clone(),
+                    isStriking: false,
+                    strikeTimer: 0
+                });
+            });
+        }
+
+        function resetPlayerPositionsIn3D() {
+            players.forEach((p, idx) => {
+                const pawn = new THREE.Group();
+                const body = new THREE.Mesh(new THREE.ConeGeometry(0.2, 0.6, 6), new THREE.MeshLambertMaterial({ color: p.modelColor }));
+                body.position.y = 0.3; 
+                pawn.add(body);
+
+                const head = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.22, 0.22), new THREE.MeshLambertMaterial({ color: 0xcccccc }));
+                head.position.y = 0.65; 
+                pawn.add(head);
+                
+                p.basePosition.copy(stairDataPositions[0].vector);
+                p.basePosition.x += (idx - 1.5) * 0.25;
+                p.basePosition.z += (idx - 1.5) * 0.15;
+                pawn.position.copy(p.basePosition);
+                
+                pawnsGroup.add(pawn);
+                p.avatar = pawn;
+                p.stair = 0;
+            });
+        }
+
+        function handleRoll() {
+            if (isMoving) return;
+            isMoving = true;
+            const rollVal = Math.floor(Math.random() * 6) + 1;
+            playSound('roll');
+            
+            const cont = document.getElementById("dice-visual-container"), valEl = document.getElementById("dice-value");
+            cont.classList.add("dice-spinning"); 
+            valEl.classList.add("opacity-20");
+            document.getElementById("roll-button").disabled = true;
+
+            setTimeout(() => {
+                cont.classList.remove("dice-spinning");
+                valEl.innerText = rollVal; 
+                valEl.classList.remove("opacity-20");
+                const active = players[activePlayerIndex];
+                let target = Math.min(active.stair + rollVal, TOTAL_STAIRS);
+                animateStepByStep(active, active.stair, target);
+            }, 800);
+        }
+
+        function animateStepByStep(player, current, target) {
+            if (current >= target) {
+                player.stair = target;
+                document.getElementById(`card-stair-${player.id === 99 ? players.length - 1 : player.id}`).innerText = target;
+                checkLandingTriggers(player);
+                return;
+            }
+            const next = current + 1;
+            playSound('step');
+            const dest = stairDataPositions[next].vector.clone();
+            const off = players.indexOf(player);
+            dest.x += (off - 1.5) * 0.25; 
+            dest.z += (off - 1.5) * 0.15;
+            
+            const startBase = player.basePosition.clone();
+            const startT = performance.now();
+            const dur = 400 / gameSpeedFactor;
+
+            function stepInterpolate(now) {
+                const prog = Math.min((now - startT) / dur, 1);
+                const jumpArc = Math.sin(prog * Math.PI) * 0.4;
+                
+                // Base position slides linearly without camera shake
+                player.basePosition.lerpVectors(startBase, dest, prog);
+                player.avatar.position.copy(player.basePosition);
+                player.avatar.position.y += jumpArc;
+
+                if (followPlayer) {
+                    const currentAngle = stairDataPositions[current] ? -stairDataPositions[current].rotationY : 0;
+                    const nextAngle = stairDataPositions[next] ? -stairDataPositions[next].rotationY : 0;
+                    
+                    let angleDiff = nextAngle - currentAngle;
+                    if (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
+                    if (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
+                    
+                    const interpolatedAngle = currentAngle + (angleDiff * prog);
+                    targetCameraAngleX = interpolatedAngle - (Math.PI / 2.5);
+                }
+
+                if (prog < 1) requestAnimationFrame(stepInterpolate);
+                else animateStepByStep(player, next, target);
+            }
+            requestAnimationFrame(stepInterpolate);
+        }
+
+        function checkLandingTriggers(player) {
+            const s = player.stair;
+            if (LADDERS[s]) {
+                playSound('portal'); 
+                flashScreen('green');
+                showEventNotification("PORTAL ASCENT!", `Magical vortex lifted to Stair ${LADDERS[s]}!`);
+                setTimeout(() => {
+                    animateSpecialMovement(player, LADDERS[s], () => {
+                        player.stair = LADDERS[s];
+                        document.getElementById(`card-stair-${player.id === 99 ? players.length - 1 : player.id}`).innerText = LADDERS[s];
+                        verifyWinCondition(player);
+                    });
+                }, 1200);
+            } else if (SNAKES[s]) {
+                playSound('snake'); 
+                flashScreen('red');
+                showEventNotification("SNAKE ATTACK!", `Fierce viper bit down to Stair ${SNAKES[s]}!`);
+                triggerSnakeCutscene(s);
+                setTimeout(() => {
+                    animateSpecialMovement(player, SNAKES[s], () => {
+                        player.stair = SNAKES[s];
+                        document.getElementById(`card-stair-${player.id === 99 ? players.length - 1 : player.id}`).innerText = SNAKES[s];
+                        verifyWinCondition(player);
+                    });
+                }, 1600);
+            } else {
+                verifyWinCondition(player);
+            }
+        }
+
+        function triggerSnakeCutscene(stair) {
+            const door = activeDoorsList.find(d => d.startStair === stair);
+            const snake = animatedSnakes.find(s => s.startStair === stair);
+
+            if (door && snake) {
+                const startRot = door.doorLeft.rotation.y;
+                const startTime = performance.now();
+                const doorDuration = 500;
+
+                function openDoor(now) {
+                    const elapsed = Math.min((now - startTime) / doorDuration, 1);
+                    door.doorLeft.rotation.y = startRot + elapsed * (Math.PI / 1.5);
+                    if (elapsed < 1) {
+                        requestAnimationFrame(openDoor);
+                    }
+                }
+                requestAnimationFrame(openDoor);
+
+                snake.isStriking = true;
+                snake.strikeTimer = 0;
+                snake.tube.material.opacity = 1.0;
+
+                setTimeout(() => {
+                    const closeTime = performance.now();
+                    function closeDoor(now) {
+                        const elapsed = Math.min((now - closeTime) / doorDuration, 1);
+                        door.doorLeft.rotation.y = (startRot + (Math.PI / 1.5)) - elapsed * (Math.PI / 1.5);
+                        if (elapsed < 1) {
+                            requestAnimationFrame(closeDoor);
+                        }
+                    }
+                    requestAnimationFrame(closeDoor);
+                    snake.isStriking = false;
+                    snake.tube.material.opacity = 0.45;
+                }, 2000);
+            }
+        }
+
+        function animateSpecialMovement(player, target, callback) {
+            const startBase = player.basePosition.clone();
+            const dest = stairDataPositions[target].vector.clone();
+            const off = players.indexOf(player);
+            dest.x += (off - 1.5) * 0.25; 
+            dest.z += (off - 1.5) * 0.15;
+            const startT = performance.now(), dur = 1200 / gameSpeedFactor;
+            
+            const startAngle = stairDataPositions[player.stair] ? -stairDataPositions[player.stair].rotationY : 0;
+            const endAngle = stairDataPositions[target] ? -stairDataPositions[target].rotationY : 0;
+
+            function slide(now) {
+                const prog = Math.min((now - startT) / dur, 1);
+                const sp = prog * prog * (3 - 2 * prog);
+                
+                player.basePosition.lerpVectors(startBase, dest, sp);
+                player.avatar.position.copy(player.basePosition);
+
+                if (followPlayer) {
+                    let angleDiff = endAngle - startAngle;
+                    if (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
+                    if (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
+                    
+                    const interpolatedAngle = startAngle + (angleDiff * sp);
+                    targetCameraAngleX = interpolatedAngle - (Math.PI / 2.5);
+                }
+
+                if (prog < 1) requestAnimationFrame(slide);
+                else if (callback) callback();
+            }
+            requestAnimationFrame(slide);
+        }
+
+        function verifyWinCondition(player) {
+            if (player.stair >= TOTAL_STAIRS) {
+                playSound('victory');
+                document.getElementById("winner-title").innerText = `${player.name.toUpperCase()} VICTORIOUS!`;
+                document.getElementById("victory-modal").classList.remove("hidden");
+                isMoving = false;
+            } else {
+                activePlayerIndex = (activePlayerIndex + 1) % players.length;
+                isMoving = false;
+                updateTurnInterface();
+            }
+        }
+
+        function showEventNotification(title, desc) {
+            const notif = document.getElementById("event-notification"), box = document.getElementById("event-box");
+            document.getElementById("event-title").innerText = title;
+            document.getElementById("event-desc").innerText = desc;
+            box.className = title.includes("PORTAL") ? "parchment-panel px-8 py-5 rounded-xl text-center max-w-lg shadow-2xl relative border-2 border-emerald-500 bg-emerald-950" : "wood-panel border-4 border-red-700 px-8 py-5 rounded-xl text-center max-w-lg shadow-2xl relative";
+            notif.classList.remove("scale-0"); 
+            notif.classList.add("scale-100");
+            setTimeout(() => { 
+                notif.classList.remove("scale-100"); 
+                notif.classList.add("scale-0"); 
+            }, 2500);
+        }
+
+        function flashScreen(color) {
+            const b = document.body; 
+            b.classList.remove("red-flash", "green-flash");
+            void b.offsetWidth; 
+            b.classList.add(`${color}-flash`);
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            if (followPlayer && players.length > 0) {
+                const active = players[activePlayerIndex];
+                if (active && active.basePosition) {
+                    const targetY = active.basePosition.y + 2.0;
+                    const lookAtTarget = active.basePosition.clone().add(new THREE.Vector3(0, 0.8, 0));
+
+                    if (!isMoving) {
+                        let playerAngle = 0;
+                        if (active.stair > 0 && active.stair <= TOTAL_STAIRS) {
+                            playerAngle = -stairDataPositions[active.stair].rotationY;
+                        }
+                        targetCameraAngleX = playerAngle - (Math.PI / 2.5);
+                    }
+
+                    let diff = targetCameraAngleX - cameraAngleX;
+                    while (diff > Math.PI) diff -= Math.PI * 2;
+                    while (diff < -Math.PI) diff += Math.PI * 2;
+                    
+                    const rotationSpeed = isMoving ? 0.15 : 0.05;
+                    cameraAngleX += diff * rotationSpeed * gameSpeedFactor;
+                    
+                    currentCameraRadius += (targetCameraRadius - currentCameraRadius) * 0.05;
+                    cameraAngleY += (0.2 - cameraAngleY) * 0.05;
+
+                    const cx = active.basePosition.x + currentCameraRadius * Math.cos(cameraAngleX);
+                    const cz = active.basePosition.z + currentCameraRadius * Math.sin(cameraAngleX);
+                    const cy = targetY + currentCameraRadius * Math.sin(cameraAngleY);
+
+                    const followSpeed = isMoving ? 0.2 : 0.1;
+                    camera.position.lerp(new THREE.Vector3(cx, cy, cz), followSpeed * gameSpeedFactor);
+                    camera.lookAt(lookAtTarget);
+                }
+            }
+
+            const time = performance.now() * 0.002;
+            activePortalsList.forEach(p => { 
+                p.ring.rotation.z = time * 2; 
+                p.ring.scale.setScalar(1 + Math.sin(time*5)*0.08); 
+            });
+            
+            animatedSnakes.forEach(s => { 
+                if (!s.isStriking) s.head.position.lerp(s.basePos, 0.1); 
+            });
+
+            // Animate low-poly cloud drift orbit around the keep
+            cloudsList.forEach(cloud => {
+                cloud.userData.angle += cloud.userData.speed;
+                cloud.position.x = Math.cos(cloud.userData.angle) * cloud.userData.distance;
+                cloud.position.z = Math.sin(cloud.userData.angle) * cloud.userData.distance;
+                cloud.rotation.y += 0.002;
+            });
+
+            renderer.render(scene, camera);
+        }
+
+        let autoFollowTimeout;
+        function resetAutoFollowTimer() {
+            clearTimeout(autoFollowTimeout);
+            autoFollowTimeout = setTimeout(() => { 
+                followPlayer = true; 
+                targetCameraRadius = 14; 
+            }, 3000);
+        }
+
+        function onMouseDown(e) { 
+            isDragging = true; 
+            followPlayer = false; 
+            prevMouseX = e.clientX; 
+            prevMouseY = e.clientY; 
+        }
+
+        function onMouseMove(e) {
+            if (!isDragging) return;
+            cameraAngleX -= (e.clientX - prevMouseX) * 0.007;
+            targetCameraAngleX = cameraAngleX;
+            cameraAngleY = Math.max(-0.2, Math.min(1.2, cameraAngleY + (e.clientY - prevMouseY) * 0.007));
+            prevMouseX = e.clientX; 
+            prevMouseY = e.clientY;
+            resetAutoFollowTimer();
+        }
+
+        function onMouseUp() { 
+            isDragging = false; 
+        }
+
+        function onWheel(e) { 
+            targetCameraRadius = Math.max(5, Math.min(45, targetCameraRadius + e.deltaY * 0.015)); 
+            followPlayer = false; 
+            resetAutoFollowTimer(); 
+        }
+        
+        let touchDist = 0;
+        function onTouchStart(e) {
+            isDragging = true; 
+            followPlayer = false;
+            if (e.touches.length === 1) { 
+                prevMouseX = e.touches[0].clientX; 
+                prevMouseY = e.touches[0].clientY; 
+            } else if (e.touches.length === 2) {
+                touchDist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+            }
+        }
+
+        function onTouchMove(e) {
+            if (!isDragging) return;
+            if (e.touches.length === 1) {
+                cameraAngleX -= (e.touches[0].clientX - prevMouseX) * 0.008;
+                targetCameraAngleX = cameraAngleX;
+                cameraAngleY = Math.max(-0.2, Math.min(1.2, cameraAngleY + (e.touches[0].clientY - prevMouseY) * 0.008));
+                prevMouseX = e.touches[0].clientX; 
+                prevMouseY = e.touches[0].clientY;
+            } else if (e.touches.length === 2) {
+                const dist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+                targetCameraRadius = Math.max(5, Math.min(45, targetCameraRadius + (touchDist - dist) * 0.08));
+                touchDist = dist;
+            }
+            resetAutoFollowTimer();
+        }
+
+        function onTouchEnd() { 
+            isDragging = false; 
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+    </script>
+  <!-- Fullscreen Launcher -->
+<div id="fullscreen-start" style="
+position:fixed;
+top:0;
+left:0;
+width:100%;
+height:100%;
+background:#000;
+display:flex;
+justify-content:center;
+align-items:center;
+z-index:999999;
+">
+    <button onclick="startFullscreen()" style="
+    padding:20px 40px;
+    font-size:24px;
+    font-weight:bold;
+    cursor:pointer;
+    border:none;
+    border-radius:10px;
+    background:#4ade80;
+    color:#000;
+    ">
+        PLAY FULLSCREEN
+    </button>
+</div>
+
+<script>
+function startFullscreen() {
+    const elem = document.documentElement;
+
+    if (elem.requestFullscreen) {
+        elem.requestFullscreen();
+    } else if (elem.webkitRequestFullscreen) {
+        elem.webkitRequestFullscreen();
+    } else if (elem.msRequestFullscreen) {
+        elem.msRequestFullscreen();
+    }
+
+    document.getElementById("fullscreen-start").style.display = "none";
+}
+
+document.addEventListener("fullscreenchange", () => {
+    const overlay = document.getElementById("fullscreen-start");
+
+    if (!document.fullscreenElement) {
+        overlay.style.display = "flex";
+    } else {
+        overlay.style.display = "none";
+    }
+});
+</script>
+</body>
+</html>
